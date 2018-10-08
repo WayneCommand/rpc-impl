@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+    <bean class="rpcimpl.test.service.impl.DarklueServiceImpl" id="darkblueService" />
+
+    <bean class="com.darkblue.rpcimpl.providers.ServiceProvider" id="serviceProvider">
+        <constructor-arg name="port" value="10001" />
+        <property name="exposeBeanMap">
+            <map>
+                <entry key="rpcimpl.test.service.DarkblueService" value-ref="darkblueService"/>
+            </map>
+        </property>
+    </bean>
+
+    <bean class="com.darkblue.rpcimpl.registry.impl.ZookeeperRegistry" id="zookeeperRegistry">
+        <constructor-arg name="host" value="127.0.0.1:2181" />
+    </bean>
+</beans>
