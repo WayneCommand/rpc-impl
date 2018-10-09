@@ -12,17 +12,17 @@ import java.util.List;
  * 传输对象反序列化
  */
 public class ObjectDecoder extends MessageToMessageDecoder<ByteBuf> {
-private ObjectSerializer serializer = new SpringSerializationUtils();
 
-    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
-        byte[] bytes = new byte[byteBuf.readableBytes()];
+    private ObjectSerializer serializer = new SpringSerializationUtils();
 
-        byteBuf.readBytes(bytes);
+    @Override
+    protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
+        byte[] bytes = new byte[msg.readableBytes()];
+
+        msg.readBytes(bytes);
 
         Object deserializer = serializer.deserializer(bytes);
 
-        list.add(deserializer);
-
-
+        out.add(deserializer);
     }
 }

@@ -16,13 +16,13 @@ public class ObjectEncoder  extends MessageToMessageEncoder<Object> {
 
     private ObjectSerializer serializer = new SpringSerializationUtils();
 
-    protected void encode(ChannelHandlerContext channelHandlerContext, Object o, List<Object> list) throws Exception {
-        byte values [] = serializer.serializer(o);
+    @Override
+    protected void encode(ChannelHandlerContext ctx, Object msg, List<Object> out) {
+        byte values [] = serializer.serializer(msg);
         ByteBuf buffer = Unpooled.buffer();
 
         buffer.writeBytes(values);
 
-        list.add(buffer);
-
+        out.add(buffer);
     }
 }
