@@ -10,21 +10,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class RoundRobinLoadBalancer implements LoadBalancer {
 
-    private AtomicInteger robin = new AtomicInteger();
+    private AtomicInteger round = new AtomicInteger();
 
     public HostAndPort select(List<HostAndPort> hostAndPorts, MethodInvokeMetaWrap methodInvokeMetaWrap) {
 
-        int i = 0;
-        try {
-            i = robin.get() % hostAndPorts.size();
-        } catch (Exception e) {
-            throw new RuntimeException("not found host");
-        }
+        if (hostAndPorts.isEmpty()) throw new RuntimeException("not found host");
 
-        int round = robin.addAndGet(1);
+        if (round.get() >= hostAndPorts.size()) round.set(0);
 
-        if (round < 0) robin.set(0);
+        HostAndPort hostAndPort = hostAndPorts.get(round.getAndIncrement());
 
-        return hostAndPorts.get(i);
+        System.out.println("==============response server port[" + hostAndPort.getPort() + "]======================");
+
+        return hostAndPort;
     }
 }
