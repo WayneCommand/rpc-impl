@@ -2,15 +2,8 @@ package com.darkblue.rpcimpl.registry.impl;
 
 import com.darkblue.rpcimpl.commons.HostAndPort;
 import com.darkblue.rpcimpl.registry.Registry;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.*;
 
-
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -39,21 +32,24 @@ public class ZookeeperRegistry implements Registry {
      * @param targetService
      * @param hostAndPort
      */
+    @Override
     public void register(Class targetService, HostAndPort hostAndPort) {
         String node=PRIFIX+"/"+targetService.getName()+SUFFIX;
         try {
-            Stat stat = client.exists(node, false);
-
-            if (stat == null) {
-                client.create(PRIFIX + "/" + targetService.getName(), new byte[0], OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+            if (client.exists(node, false) == null) {
+                if (client.exists(PRIFIX + "/" + targetService.getName(),false) == null){
+                    client.create(PRIFIX + "/" + targetService.getName(), new byte[0], OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                }
                 client.create(node, new byte[0], OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             }
-            String tmpnode=node+"/"+hostAndPort.getHost()+":"+hostAndPort.getPort();
 
-            if(client.exists(tmpnode,false) != null){
-                client.delete(tmpnode, -1);
+            String tmpHostNode = node + "/" + hostAndPort.getHost() + ":" + hostAndPort.getPort();
+
+            if (client.exists(tmpHostNode, false) != null) {
+                client.delete(tmpHostNode, -1);
             }
-            client.create(tmpnode, new byte[0], OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+
+            client.create(tmpHostNode, new byte[0], OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -64,31 +60,43 @@ public class ZookeeperRegistry implements Registry {
      * @param targetService
      * @param hostAndPorts
      */
+    @Override
     public void subscrible(Class targetService, final List<HostAndPort> hostAndPorts) {
-        String node=PRIFIX+"/"+targetService.getName()+SUFFIX;
+        String node = PRIFIX + "/" + targetService.getName() + SUFFIX;
+        try {
+            Watcher watcher = new Watcher() {
+                @Override
+                public void process(WatchedEvent event) {
+                    System.out.println("=====update nodes ======");
+                    hostAndPorts.clear();
+                    try {
+                        List<String> currentChilds = client.getChildren(node, false);
 
-        client.register((we)->{
-            System.out.println("=====update nodes ======");
-            hostAndPorts.clear();
+                        for (String nodeStr : currentChilds) {
+                            HostAndPort hostAndPort = new HostAndPort();
+                            hostAndPort.setHost(nodeStr.split(":")[0]);
+                            hostAndPort.setPort(Short.parseShort(nodeStr.split(":")[1]));
+                            System.out.println("add node[" + hostAndPort.getHost() + ":" + hostAndPort.getPort() + "]");
+                            hostAndPorts.add(hostAndPort);
+                        }
 
-            try {
-                List<String> currentChilds = client.getChildren(node, false);
+                        //因为watcher是一次性的 这里重新注册
+                        client.getChildren(node, this);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
 
-                for (String nodeStr : currentChilds) {
-                    HostAndPort hostAndPort=new HostAndPort();
-                    hostAndPort.setHost(nodeStr.split(":")[0]);
-                    hostAndPort.setPort(Short.parseShort(nodeStr.split(":")[1]));
-                    System.out.println("add nodes："+hostAndPort);
-                    hostAndPorts.add(hostAndPort);
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            };
 
-        });
-
+            //注册监听
+            client.getChildren(node,watcher);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
+    @Override
     public List<HostAndPort> retriveService(Class targetService) {
         String node=PRIFIX+"/"+targetService.getName()+SUFFIX;
         List<HostAndPort> hostAndPorts=new CopyOnWriteArrayList<HostAndPort>();
@@ -106,6 +114,7 @@ public class ZookeeperRegistry implements Registry {
         return hostAndPorts;
     }
 
+    @Override
     public void close() {
         try {
             client.close();
