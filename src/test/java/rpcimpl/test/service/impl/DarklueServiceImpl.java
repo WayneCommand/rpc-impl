@@ -1,11 +1,7 @@
 package rpcimpl.test.service.impl;
 
-import com.darkblue.rpcimpl.annotation.RpcService;
-import org.springframework.stereotype.Service;
 import rpcimpl.test.service.DarkblueService;
 
-@RpcService
-@Service
 public class DarklueServiceImpl implements DarkblueService {
 
     public String call(String str) {
