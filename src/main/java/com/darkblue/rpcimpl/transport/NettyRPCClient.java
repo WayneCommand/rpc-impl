@@ -36,7 +36,9 @@ public class NettyRPCClient implements RpcClient {
     public ResultWrap invoke(final MethodInvokeMetaWrap methodInvokeMetaWrap, HostAndPort hostAndPort) {
 
         bootstrap.handler(new ChannelInitializer<SocketChannel>() {
-            protected void initChannel(SocketChannel socketChannel) throws Exception {
+
+            @Override
+            protected void initChannel(SocketChannel socketChannel) {
                 ChannelPipeline pipeline = socketChannel.pipeline();
 
                 pipeline.addLast(new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
