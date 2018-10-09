@@ -9,6 +9,8 @@ import java.util.Random;
 
 public class RandomLoadBalancer implements LoadBalancer {
     public HostAndPort select(List<HostAndPort> hostAndPorts, MethodInvokeMetaWrap methodInvokeMetaWrap) {
+        if (hostAndPorts.isEmpty()) throw new RuntimeException("not found host");
+
         int i = new Random().nextInt(hostAndPorts.size());
 
         return hostAndPorts.get(i);
