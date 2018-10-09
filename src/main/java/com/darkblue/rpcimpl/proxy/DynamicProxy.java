@@ -33,8 +33,8 @@ public class DynamicProxy implements InvocationHandler , FactoryBean {
         this.cluster = cluster;
 
         //查询服务列表
-
         hostAndPorts = registry.retriveService(targetInterface);
+
         //订阅服务变更
         registry.subscrible(targetInterface,hostAndPorts);
 
@@ -51,6 +51,8 @@ public class DynamicProxy implements InvocationHandler , FactoryBean {
 
         //发送请求
         ResultWrap resultWrap = cluster.invoke(hostAndPorts, methodInvokeMetaWrap);
+
+        if (resultWrap == null) throw new RuntimeException("no result exception");
 
         Result result = resultWrap.getResult();
         if (result.getException() != null){
